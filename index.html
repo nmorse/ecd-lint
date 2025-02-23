@@ -1,0 +1,317 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ECD Lint</title>
+    <style>
+        h5 {
+            margin: 8px;
+        }
+
+        .centered {
+            display: flex;
+            justify-content: center;
+            flex-direction: column;
+            align-items: center;
+        }
+
+        .stack {
+            display: flex;
+            flex-direction: column;
+            align-items: flex-start;
+        }
+
+        .container {
+            display: flex;
+            justify-content: center;
+        }
+
+        .command-container {
+            display: flex;
+            justify-content: center;
+        }
+
+        .button-container {
+            display: flex;
+            flex-direction: column;
+            align-content: flex-start;
+            justify-content: flex-start;
+            align-items: flex-start;
+            flex-wrap: wrap;
+            margin: 4px;
+        }
+
+        .dance-floor {
+            display: grid;
+            grid-template-columns: repeat(2, 100px);
+            gap: 20px;
+            justify-content: center;
+            margin-top: 50px;
+            width: 220px;
+        }
+
+        .set {
+            display: grid;
+            grid-template-columns: repeat(2, 100px);
+            gap: 10px;
+            padding: 10px;
+            border: 2px solid black;
+        }
+
+        .dancer {
+            width: 80px;
+            height: 80px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            border: 2px solid black;
+            border-radius: 50%;
+            font-size: 18px;
+            font-weight: bold;
+        }
+
+        .men {
+            background-color: #5a94c7;
+        }
+
+        .women {
+            background-color: #c76a7a;
+        }
+
+        .men.even {
+            background-color: lightblue;
+        }
+
+        .women.even {
+            background-color: lightpink;
+        }
+
+        .command-log {
+            width: 300px;
+            border: 2px solid black;
+            padding: 10px;
+            margin-left: 20px;
+            height: 300px;
+            overflow-y: auto;
+        }
+    </style>
+</head>
+
+<body class="centered">
+
+    <div class="stack">
+        <h1>ECD Lint</h1>
+        <div class="container">
+            <div id="dance-floor"></div>
+            <div style="display: flex;
+                        flex-direction: column;
+                        align-items: baseline;">
+                <div class="command-log" id="command-log"><strong>Dance Log:</strong></div>
+                <div>
+                    <button onclick="resetDancers(); resetCommandLog();">Reset</button>
+                    <button onclick="undoLastCommand();">Undo</button>
+                </div>
+            </div>
+
+        </div>
+        <div class="command-container">
+            <div class="button-container">
+                <h5>All</h5>
+                <button onclick="logCommand('Change Across the Set'); changeAcrossTheSet();">Change Across the
+                    Set</button>
+                <button onclick="logCommand('Change Along the Set'); changeAlongTheSet();">Change Along the Set</button>
+                <button onclick="logCommand('Circle CW One Place'); circleCWOnePlace();">Circle CW One Place</button>
+                <button onclick="logCommand('Circle CCW One Place'); circleCCWOnePlace();">Circle CCW One Place</button>
+            </div>
+            <div class="button-container">
+                <h5>Diagonals</h5>
+                <button onclick="logCommand('First Diagonals Cross'); firstDiagonalsCross();">First Diagonals
+                    Cross</button>
+                <button onclick="logCommand('Second Diagonals Cross'); secondDiagonalsCross();">Second Diagonals
+                    Cross</button>
+            </div>
+            <div class="button-container">
+                <h5>Positional Pair Changes</h5>
+                <button onclick="logCommand('Top Pair Change Across the Set'); topChangeAcrossTheSet();">
+                    Top Pair Change Across the Set
+                </button>
+                <button onclick="logCommand('Bottom Pair Change Across the Set'); bottomChangeAcrossTheSet();">
+                    Bottom Pair Change Across the Set
+                </button>
+                <button onclick="logCommand(`Pair Change Along Men's line`); menChangeAlongTheSet();">
+                    Pair Change Along Men's line
+                </button>
+                <button onclick="logCommand(`Pair Change Along Women's line`); womenChangeAlongTheSet();">
+                    Pair Change Along Women's line
+                </button>
+            </div>
+        </div>
+    </div>
+    <script>
+        const initialDancers = [
+            [{ id: 1, gender: 'men' }, { id: 1, gender: 'women' }, { id: 2, gender: 'men' }, { id: 2, gender: 'women' }],
+            [{ id: 3, gender: 'men' }, { id: 3, gender: 'women' }, { id: 4, gender: 'men' }, { id: 4, gender: 'women' }]
+        ];
+
+        let dancers = JSON.parse(JSON.stringify(initialDancers));
+        let history = [];
+
+        function renderDancers() {
+            const floor = document.getElementById('dance-floor');
+            floor.innerHTML = '';
+            dancers.forEach(set => {
+                let setDiv = document.createElement('div');
+                setDiv.className = 'set';
+                set.forEach(dancer => {
+                    let div = document.createElement('div');
+                    div.className = `dancer ${dancer.gender} ${dancer.id % 2 === 0 ? 'even' : ''}`;
+                    div.innerText = dancer.gender === 'men' ? `M${dancer.id}` : `W${dancer.id}`;
+                    setDiv.appendChild(div);
+                });
+                floor.appendChild(setDiv);
+            });
+        }
+
+        function resetDancers() {
+            dancers = JSON.parse(JSON.stringify(initialDancers));
+            history = [];
+            renderDancers();
+        }
+
+        function resetCommandLog() {
+            document.getElementById('command-log').innerHTML = '<strong>Command Log:</strong>';
+        }
+
+        function logCommand(command) {
+            history.push(JSON.parse(JSON.stringify(dancers)));
+            let logDiv = document.getElementById('command-log');
+            let entry = document.createElement('div');
+            entry.innerText = command;
+            logDiv.appendChild(entry);
+        }
+
+        function undoLastCommand() {
+            if (history.length > 0) {
+                dancers = history.pop();
+                renderDancers();
+                let logDiv = document.getElementById('command-log');
+                if (logDiv.lastChild && logDiv.lastChild.tagName === 'DIV') {
+                    logDiv.removeChild(logDiv.lastChild);
+                }
+            }
+        }
+
+        function changeAcrossTheSet() {
+            dancers.forEach(set => {
+                for (let i = 0; i < set.length; i += 2) {
+                    let temp = set[i];
+                    set[i] = set[i + 1];
+                    set[i + 1] = temp;
+                }
+            });
+            renderDancers();
+        }
+
+        function changeAlongTheSet() {
+            dancers.forEach(set => {
+                let temp = set[0];
+                set[0] = set[2];
+                set[2] = temp;
+                temp = set[1];
+                set[1] = set[3];
+                set[3] = temp;
+            });
+            renderDancers();
+        }
+
+        function firstDiagonalsCross() {
+            dancers.forEach(set => {
+                if (set.length >= 4) {
+                    let temp = set[0];
+                    set[0] = set[3];
+                    set[3] = temp;
+                }
+            });
+            renderDancers();
+        }
+
+        function secondDiagonalsCross() {
+            dancers.forEach(set => {
+                if (set.length >= 4) {
+                    let temp = set[1];
+                    set[1] = set[2];
+                    set[2] = temp;
+                }
+            });
+            renderDancers();
+        }
+
+        function circleCWOnePlace() {
+            dancers.forEach(set => {
+                if (set.length >= 4) {
+                    let temp = set[0];
+                    set[0] = set[2];
+                    set[2] = set[3];
+                    set[3] = set[1];
+                    set[1] = temp;
+                }
+            });
+            renderDancers();
+        }
+
+        function circleCCWOnePlace() {
+            dancers.forEach(set => {
+                if (set.length >= 4) {
+                    let temp = set[0];
+                    set[0] = set[1];
+                    set[1] = set[3];
+                    set[3] = set[2];
+                    set[2] = temp;
+                }
+            });
+            renderDancers();
+        }
+
+        function menChangeAlongTheSet() {
+            dancers.forEach(set => {
+                let temp = set[0];
+                set[0] = set[2];
+                set[2] = temp;
+            });
+            renderDancers();
+        }
+
+        function womenChangeAlongTheSet() {
+            dancers.forEach(set => {
+                let temp = set[1];
+                set[1] = set[3];
+                set[3] = temp;
+            });
+            renderDancers();
+        }
+
+        function topChangeAcrossTheSet() {
+            dancers.forEach(set => {
+                let temp = set[0];
+                set[0] = set[1];
+                set[1] = temp;
+            });
+            renderDancers();
+        }
+
+        function bottomChangeAcrossTheSet() {
+            dancers.forEach(set => {
+                let temp = set[2];
+                set[2] = set[3];
+                set[3] = temp;
+            });
+            renderDancers();
+        }
+
+        renderDancers();
+    </script>
+</body>
+
+</html>
