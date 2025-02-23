@@ -111,6 +111,8 @@
                 <div class="command-log" id="command-log"><strong>Dance Log:</strong></div>
                 <div>
                     <button onclick="resetDancers(); resetCommandLog();">Reset</button>
+                    <button onclick="topChangeAcrossTheSet(); resetCommandLog();">Reset Ones Improper</button>
+                    
                     <button onclick="undoLastCommand();">Undo</button>
                 </div>
             </div>
@@ -176,6 +178,12 @@
 
         function resetDancers() {
             dancers = JSON.parse(JSON.stringify(initialDancers));
+            history = [];
+            renderDancers();
+        }
+        function resetDancersOnesImproper() {
+            dancers = JSON.parse(JSON.stringify(initialDancers));
+            topChangeAcrossTheSet();
             history = [];
             renderDancers();
         }
